@@ -5,8 +5,8 @@
 //  Created by Yuchen Zhang on 2022/9/4.
 //
 
-#import <Foundation/Foundation.h>
+#import <MultipeerConnectivity/MultipeerConnectivity.h>
 
-@interface MultipeerConnectivityTransportForNetcodeForGameObjects : NSObject
+@interface MPCSession : NSObject
 
 @end
