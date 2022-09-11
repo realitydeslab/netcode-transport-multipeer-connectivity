@@ -9,7 +9,7 @@
 
 void (*OnClientConnected)(int) = NULL;
 void (*OnConnectedToHost)(void) = NULL;
-void (*OnReceivedData)(int, unsigned char *, int) = NULL;
+void (*OnReceivedData)(int, const void *, int) = NULL;
 void (*OnClientDisconnected)(int) = NULL;
 void (*OnHostDisconnected)(void) = NULL;
 
@@ -162,12 +162,13 @@ void (*OnHostDisconnected)(void) = NULL;
 - (void)session:(MCSession *)session didReceiveData:(NSData *)data fromPeer:(MCPeerID *)peerID {
     NSNumber *num = self.peerIDToTransportID[peerID];
     if (num) {
-        unsigned char *arr = (unsigned char *)[data bytes];
-        int length;
-        memcpy(&length, arr, sizeof(int));
+        int length = (int)[data length];
+//        unsigned char *arr = (unsigned char *)[data bytes];
+//        int length;
+//        memcpy(&length, arr, sizeof(int));
         if (OnReceivedData != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                OnReceivedData([num intValue], arr + sizeof(int), length);
+                OnReceivedData([num intValue], [data bytes], length);
             });
         }
     } else {
@@ -217,7 +218,7 @@ void (*OnHostDisconnected)(void) = NULL;
 
 void MPC_Initialize(void (*OnClientConnectedDelegate)(int),
                     void (*OnConnectedToHostDelegate)(void),
-                    void (*OnReceivedDataDelegate)(int, unsigned char *, int),
+                    void (*OnReceivedDataDelegate)(int, const void *, int),
                     void (*OnClientDisconnectedDelegate)(int),
                     void (*OnHostDisconnectedDelegate)(void)) {
     OnClientConnected = OnClientConnectedDelegate;
@@ -252,10 +253,10 @@ void MPC_SendData(int transportID, unsigned char *data, int length, bool reliabl
     MPCSession *mpcSession = [MPCSession sharedInstance];
     MCPeerID *peerID = mpcSession.transportIDToPeerID[[[NSNumber alloc] initWithInt:transportID]];
     if (peerID) {
-        unsigned char arr[length + sizeof(int)];
-        memcpy(arr, &length, sizeof(int));
-        memcpy(arr + sizeof(int), data, length);
-        NSData *arrData = [NSData dataWithBytes:arr length:sizeof(arr)];
+//        unsigned char arr[length + sizeof(int)];
+//        memcpy(arr, &length, sizeof(int));
+//        memcpy(arr + sizeof(int), data, length);
+        NSData *arrData = [NSData dataWithBytes:data length:length];
         [mpcSession sendData:arrData toPeer:peerID withReliability:reliable];
     } else {
         NSLog(@"[MPC] Failed to send data to peer with transport id %d", transportID);
