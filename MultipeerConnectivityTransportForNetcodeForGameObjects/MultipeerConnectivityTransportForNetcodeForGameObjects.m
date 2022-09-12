@@ -163,9 +163,6 @@ void (*OnHostDisconnected)(void) = NULL;
     NSNumber *num = self.peerIDToTransportID[peerID];
     if (num) {
         int length = (int)[data length];
-//        unsigned char *arr = (unsigned char *)[data bytes];
-//        int length;
-//        memcpy(&length, arr, sizeof(int));
         if (OnReceivedData != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 OnReceivedData([num intValue], [data bytes], length);
@@ -253,9 +250,6 @@ void MPC_SendData(int transportID, unsigned char *data, int length, bool reliabl
     MPCSession *mpcSession = [MPCSession sharedInstance];
     MCPeerID *peerID = mpcSession.transportIDToPeerID[[[NSNumber alloc] initWithInt:transportID]];
     if (peerID) {
-//        unsigned char arr[length + sizeof(int)];
-//        memcpy(arr, &length, sizeof(int));
-//        memcpy(arr + sizeof(int), data, length);
         NSData *arrData = [NSData dataWithBytes:data length:length];
         [mpcSession sendData:arrData toPeer:peerID withReliability:reliable];
     } else {
