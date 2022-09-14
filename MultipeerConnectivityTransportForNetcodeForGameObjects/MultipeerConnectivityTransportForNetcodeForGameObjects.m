@@ -91,7 +91,9 @@ void (*OnHostDisconnected)(void) = NULL;
     if (self.browser != nil) {
         [self stopBrowsing];
     }
-    [self.session disconnect];
+    if (self.session != nil) {
+        [self.session disconnect];
+    }
     self.session = nil;
     self.peerID = nil;
     NSLog(@"[MPC] Deinitialized");
