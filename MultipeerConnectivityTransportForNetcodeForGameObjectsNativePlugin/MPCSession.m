@@ -5,7 +5,7 @@
 //  Created by Yuchen Zhang on 2022/9/4.
 //
 
-#import "MultipeerConnectivityTransportForNetcodeForGameObjects.h"
+#import "MPCSession.h"
 
 void (*OnClientConnected)(int) = NULL;
 void (*OnConnectedToHost)(void) = NULL;

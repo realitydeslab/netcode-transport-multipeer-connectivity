@@ -7,8 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		4B7DDE5228C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B7DDE5128C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.m */; };
-		4B7DDE5328C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4B7DDE5028C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.h */; };
+		4B7DDE5228C4D210005D5278 /* MPCSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B7DDE5128C4D210005D5278 /* MPCSession.m */; };
+		4B7DDE5328C4D210005D5278 /* MPCSession.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4B7DDE5028C4D210005D5278 /* MPCSession.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -18,16 +18,16 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
-				4B7DDE5328C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.h in CopyFiles */,
+				4B7DDE5328C4D210005D5278 /* MPCSession.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjects.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMultipeerConnectivityTransportForNetcodeForGameObjects.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		4B7DDE5028C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MultipeerConnectivityTransportForNetcodeForGameObjects.h; sourceTree = "<group>"; };
-		4B7DDE5128C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MultipeerConnectivityTransportForNetcodeForGameObjects.m; sourceTree = "<group>"; };
+		4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		4B7DDE5028C4D210005D5278 /* MPCSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MPCSession.h; sourceTree = "<group>"; };
+		4B7DDE5128C4D210005D5278 /* MPCSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MPCSession.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,7 +44,7 @@
 		4B7DDE4428C4D210005D5278 = {
 			isa = PBXGroup;
 			children = (
-				4B7DDE4F28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects */,
+				4B7DDE4F28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin */,
 				4B7DDE4E28C4D210005D5278 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,26 +52,26 @@
 		4B7DDE4E28C4D210005D5278 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjects.a */,
+				4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		4B7DDE4F28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects */ = {
+		4B7DDE4F28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin */ = {
 			isa = PBXGroup;
 			children = (
-				4B7DDE5028C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.h */,
-				4B7DDE5128C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.m */,
+				4B7DDE5028C4D210005D5278 /* MPCSession.h */,
+				4B7DDE5128C4D210005D5278 /* MPCSession.m */,
 			);
-			path = MultipeerConnectivityTransportForNetcodeForGameObjects;
+			path = MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		4B7DDE4C28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects */ = {
+		4B7DDE4C28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4B7DDE5628C4D210005D5278 /* Build configuration list for PBXNativeTarget "MultipeerConnectivityTransportForNetcodeForGameObjects" */;
+			buildConfigurationList = 4B7DDE5628C4D210005D5278 /* Build configuration list for PBXNativeTarget "MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin" */;
 			buildPhases = (
 				4B7DDE4928C4D210005D5278 /* Sources */,
 				4B7DDE4A28C4D210005D5278 /* Frameworks */,
@@ -81,9 +81,9 @@
 			);
 			dependencies = (
 			);
-			name = MultipeerConnectivityTransportForNetcodeForGameObjects;
+			name = MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin;
 			productName = MultipeerConnectivityTransportForNetcodeForGameObjects;
-			productReference = 4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjects.a */;
+			productReference = 4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a */;
 			productType = "com.apple.product-type.library.static";
 		};
 /* End PBXNativeTarget section */
@@ -100,7 +100,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 4B7DDE4828C4D210005D5278 /* Build configuration list for PBXProject "MultipeerConnectivityTransportForNetcodeForGameObjects" */;
+			buildConfigurationList = 4B7DDE4828C4D210005D5278 /* Build configuration list for PBXProject "MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -113,7 +113,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				4B7DDE4C28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects */,
+				4B7DDE4C28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin */,
 			);
 		};
 /* End PBXProject section */
@@ -123,7 +123,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4B7DDE5228C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjects.m in Sources */,
+				4B7DDE5228C4D210005D5278 /* MPCSession.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -267,7 +267,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4B7DDE4828C4D210005D5278 /* Build configuration list for PBXProject "MultipeerConnectivityTransportForNetcodeForGameObjects" */ = {
+		4B7DDE4828C4D210005D5278 /* Build configuration list for PBXProject "MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4B7DDE5428C4D210005D5278 /* Debug */,
@@ -276,7 +276,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		4B7DDE5628C4D210005D5278 /* Build configuration list for PBXNativeTarget "MultipeerConnectivityTransportForNetcodeForGameObjects" */ = {
+		4B7DDE5628C4D210005D5278 /* Build configuration list for PBXNativeTarget "MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				4B7DDE5728C4D210005D5278 /* Debug */,
