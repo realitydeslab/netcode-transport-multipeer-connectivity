@@ -140,6 +140,9 @@ void (*OnHostDisconnected)(void) = NULL;
         }
         case MCSessionStateNotConnected: {
             NSLog(@"[MPC] Disconnected with peer %@", [peerID displayName]);
+            if (self.session == nil) {
+                return;
+            }
             if ([self isHost]) {
                 NSNumber *num = self.peerIDToTransportID[peerID];
                 if (num) {
