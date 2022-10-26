@@ -59,8 +59,12 @@ void (*OnHostDisconnected)(void) = NULL;
 }
 
 - (void)startAdvertising:(NSString *)bundleId {
-    NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"BundleId" : bundleId };
-    self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:discoveryInfo serviceType:self.serviceType];
+    if (bundleId != nil) {
+        NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"BundleId" : bundleId };
+        self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:discoveryInfo serviceType:self.serviceType];
+    } else {
+        self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:nil serviceType:self.serviceType];
+    }
     self.advertiser.delegate = self;
     self.isHost = YES;
     [self.advertiser startAdvertisingPeer];
@@ -92,7 +96,7 @@ void (*OnHostDisconnected)(void) = NULL;
     }
 }
 
-- (void)deinitialize {
+- (void)shutdown {
     if (self.advertiser != nil) {
         [self stopAdvertising];
     }
@@ -102,9 +106,10 @@ void (*OnHostDisconnected)(void) = NULL;
     if (self.session != nil) {
         [self.session disconnect];
     }
+    self.session.delegate = nil;
     self.session = nil;
     self.peerID = nil;
-    NSLog(@"[MPC] Deinitialized");
+    NSLog(@"[MPC] Shutdown");
 }
 
 - (void)sendData:(NSData *)data toPeer:(MCPeerID *)peerID withReliability:(BOOL)reliable {
@@ -163,10 +168,12 @@ void (*OnHostDisconnected)(void) = NULL;
                     }
                 }
             } else {
-                if (OnHostDisconnected != NULL) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        OnHostDisconnected();
-                    });
+                if ([peerID isEqual:self.hostPeerID]) {
+                    if (OnHostDisconnected != NULL) {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            OnHostDisconnected();
+                        });
+                    }
                 }
             }
             break;
@@ -212,6 +219,13 @@ void (*OnHostDisconnected)(void) = NULL;
 #pragma mark - MCNearbyServiceBrowserDelegate
 
 - (void)browser:(MCNearbyServiceBrowser *)browser foundPeer:(MCPeerID *)peerID withDiscoveryInfo:(NSDictionary<NSString *,NSString *> *)info {
+    if (self.bundleId == nil) {
+        NSLog(@"[MPC] Browser found peer %@", [peerID displayName]);
+        self.hostPeerID = peerID;
+        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
+        return;
+    }
+    
     NSString *bundleId = info[@"BundleId"];
     if ([bundleId isEqualToString:self.bundleId]) {
         NSLog(@"[MPC] Browser found peer %@ with correct bundleId: %@", [peerID displayName], bundleId);
@@ -263,8 +277,8 @@ void MPC_StopBrowsing(void) {
     [[MPCSession sharedInstance] stopBrowsing];
 }
 
-void MPC_Deinitialize(void) {
-    [[MPCSession sharedInstance] deinitialize];
+void MPC_Shutdown(void) {
+    [[MPCSession sharedInstance] shutdown];
 }
 
 void MPC_SendData(int transportID, unsigned char *data, int length, bool reliable) {
