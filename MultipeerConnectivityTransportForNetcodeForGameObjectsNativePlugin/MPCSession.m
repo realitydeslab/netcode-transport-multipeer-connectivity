@@ -1,17 +1,14 @@
-//
-//  MultipeerConnectivityTransportForNetcodeForGameObjects.m
-//  MultipeerConnectivityTransportForNetcodeForGameObjects
-//
-//  Created by Yuchen Zhang on 2022/9/4.
-//
-
-#import "MPCSession.h"
+#import <MultipeerConnectivity/MultipeerConnectivity.h>
 
 void (*OnClientConnected)(int) = NULL;
 void (*OnConnectedToHost)(void) = NULL;
 void (*OnReceivedData)(int, const void *, int) = NULL;
 void (*OnClientDisconnected)(int) = NULL;
 void (*OnHostDisconnected)(void) = NULL;
+
+@interface MPCSession : NSObject
+
+@end
 
 @interface MPCSession () <MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, MCNearbyServiceBrowserDelegate>
 
@@ -59,6 +56,7 @@ void (*OnHostDisconnected)(void) = NULL;
 }
 
 - (void)startAdvertising:(NSString *)bundleId {
+    self.bundleId = bundleId;
     if (bundleId != nil) {
         NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"BundleId" : bundleId };
         self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:discoveryInfo serviceType:self.serviceType];
@@ -163,6 +161,7 @@ void (*OnHostDisconnected)(void) = NULL;
                 if (num) {
                     if (OnClientDisconnected != NULL) {
                         dispatch_async(dispatch_get_main_queue(), ^{
+                            NSLog(@"[MPC] OnClientDisconnected");
                             OnClientDisconnected([num intValue]);
                         });
                     }
@@ -171,6 +170,7 @@ void (*OnHostDisconnected)(void) = NULL;
                 if ([peerID isEqual:self.hostPeerID]) {
                     if (OnHostDisconnected != NULL) {
                         dispatch_async(dispatch_get_main_queue(), ^{
+                            NSLog(@"[MPC] OnHostDisconnected");
                             OnHostDisconnected();
                         });
                     }
@@ -198,7 +198,9 @@ void (*OnHostDisconnected)(void) = NULL;
 - (void)session:(MCSession *)session didReceiveStream:(NSInputStream *)stream withName:(NSString *)streamName fromPeer:(MCPeerID *)peerID {}
 
 - (void)session:(MCSession *)session didReceiveCertificate:(NSArray *)certificate fromPeer:(MCPeerID *)peerID certificateHandler:(void (^)(BOOL))certificateHandler {
-    certificateHandler(YES);
+    if (certificateHandler != nil) {
+        certificateHandler(YES);
+    }
 }
 
 - (void)session:(MCSession *)session didStartReceivingResourceWithName:(NSString *)resourceName fromPeer:(MCPeerID *)peerID withProgress:(NSProgress *)progress {}

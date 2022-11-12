@@ -8,7 +8,6 @@
 
 /* Begin PBXBuildFile section */
 		4B7DDE5228C4D210005D5278 /* MPCSession.m in Sources */ = {isa = PBXBuildFile; fileRef = 4B7DDE5128C4D210005D5278 /* MPCSession.m */; };
-		4B7DDE5328C4D210005D5278 /* MPCSession.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4B7DDE5028C4D210005D5278 /* MPCSession.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -18,7 +17,6 @@
 			dstPath = "include/$(PRODUCT_NAME)";
 			dstSubfolderSpec = 16;
 			files = (
-				4B7DDE5328C4D210005D5278 /* MPCSession.h in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -26,7 +24,6 @@
 
 /* Begin PBXFileReference section */
 		4B7DDE4D28C4D210005D5278 /* libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin.a; sourceTree = BUILT_PRODUCTS_DIR; };
-		4B7DDE5028C4D210005D5278 /* MPCSession.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MPCSession.h; sourceTree = "<group>"; };
 		4B7DDE5128C4D210005D5278 /* MPCSession.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = MPCSession.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -60,7 +57,6 @@
 		4B7DDE4F28C4D210005D5278 /* MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin */ = {
 			isa = PBXGroup;
 			children = (
-				4B7DDE5028C4D210005D5278 /* MPCSession.h */,
 				4B7DDE5128C4D210005D5278 /* MPCSession.m */,
 			);
 			path = MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin;
