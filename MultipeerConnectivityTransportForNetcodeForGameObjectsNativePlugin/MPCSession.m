@@ -33,7 +33,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 - (instancetype)init {
     self = [super init];
     if (self) {
-        self.serviceType = @"unity-netcode-mpc";
+        self.serviceType = @"netcode-mpc";
     }
     return self;
 }
