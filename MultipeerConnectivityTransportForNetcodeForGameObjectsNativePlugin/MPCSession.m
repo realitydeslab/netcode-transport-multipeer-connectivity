@@ -23,7 +23,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 @property (nonatomic, strong, nullable) NSMutableDictionary<MCPeerID *, NSNumber *> *peerIDToTransportID;
 @property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, MCPeerID *> *transportIDToPeerID;
 @property (assign) BOOL isHost;
-@property (nonatomic, strong, nullable) NSString *bundleId;
+@property (nonatomic, strong, nullable) NSString *sessionId;
 @property (nonatomic, strong ,nullable) MCPeerID *hostPeerID;
 
 @end
@@ -33,7 +33,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 - (instancetype)init {
     self = [super init];
     if (self) {
-        self.serviceType = @"holokit-0904";
+        self.serviceType = @"unity-netcode-mpc";
     }
     return self;
 }
@@ -57,10 +57,10 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
     NSLog(@"[MPC] Initialized");
 }
 
-- (void)startAdvertising:(NSString *)bundleId {
-    self.bundleId = bundleId;
-    if (bundleId != nil) {
-        NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"BundleId" : bundleId };
+- (void)startAdvertising:(NSString *)sessionId {
+    self.sessionId = sessionId;
+    if (sessionId != nil) {
+        NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"SessionId" : sessionId };
         self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:discoveryInfo serviceType:self.serviceType];
     } else {
         self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:nil serviceType:self.serviceType];
@@ -71,8 +71,8 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
     NSLog(@"[MPC] Started advertising");
 }
 
-- (void)startBrowsing:(NSString *)bundleId {
-    self.bundleId = bundleId;
+- (void)startBrowsing:(NSString *)sessionId {
+    self.sessionId = sessionId;
     self.browser = [[MCNearbyServiceBrowser alloc] initWithPeer:self.peerID serviceType:self.serviceType];
     self.browser.delegate = self;
     self.isHost = NO;
@@ -232,30 +232,30 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 #pragma mark - MCNearbyServiceBrowserDelegate
 
 - (void)browser:(MCNearbyServiceBrowser *)browser foundPeer:(MCPeerID *)peerID withDiscoveryInfo:(NSDictionary<NSString *,NSString *> *)info {
-    NSString *bundleId = info[@"BundleId"];
-    if (self.bundleId == nil && bundleId == nil) {
+    NSString *sessionId = info[@"SessionId"];
+    if (self.sessionId == nil && sessionId == nil) {
         NSLog(@"[MPC] Browser found peer %@", [peerID displayName]);
-        self.hostPeerID = peerID;
-        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
         if (OnBrowserFoundPeer != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 OnBrowserFoundPeer([[peerID displayName] UTF8String]);
             });
         }
+        self.hostPeerID = peerID;
+        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
         return;
     }
     
-    if ([bundleId isEqualToString:self.bundleId]) {
-        NSLog(@"[MPC] Browser found peer %@ with correct bundleId: %@", [peerID displayName], bundleId);
-        self.hostPeerID = peerID;
-        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
+    if ([sessionId isEqualToString:self.sessionId]) {
+        NSLog(@"[MPC] Browser found peer %@ with correct session Id: %@", [peerID displayName], sessionId);
         if (OnBrowserFoundPeer != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
                 OnBrowserFoundPeer([[peerID displayName] UTF8String]);
             });
         }
+        self.hostPeerID = peerID;
+        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
     } else {
-        NSLog(@"[MPC] Browser found peer %@ with wrong bundleId: %@, expecting bundleId: %@", [peerID displayName], bundleId, self.bundleId);
+        NSLog(@"[MPC] Browser found peer %@ with wrong session Id: %@, expecting session Id: %@", [peerID displayName], sessionId, self.sessionId);
     }
 }
 
@@ -293,12 +293,14 @@ void MPC_Initialize(void (*OnBrowserFoundPeerDelegate)(const char *),
     [[MPCSession sharedInstance] initialize];
 }
 
-void MPC_StartAdvertising(const char *bundleId) {
-    [[MPCSession sharedInstance] startAdvertising: [NSString stringWithUTF8String:bundleId]];
+void MPC_StartAdvertising(const char *sessionId) {
+    NSString *str = sessionId == NULL ? nil : [NSString stringWithUTF8String:sessionId];
+    [[MPCSession sharedInstance] startAdvertising: str];
 }
 
-void MPC_StartBrowsing(const char *bundleId) {
-    [[MPCSession sharedInstance] startBrowsing: [NSString stringWithUTF8String:bundleId]];
+void MPC_StartBrowsing(const char *sessionId) {
+    NSString *str = sessionId == NULL ? nil : [NSString stringWithUTF8String:sessionId];
+    [[MPCSession sharedInstance] startBrowsing: str];
 }
 
 void MPC_StopAdvertising(void) {
