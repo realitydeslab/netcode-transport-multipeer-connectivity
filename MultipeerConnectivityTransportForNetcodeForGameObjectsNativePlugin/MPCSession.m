@@ -1,12 +1,19 @@
 #import <MultipeerConnectivity/MultipeerConnectivity.h>
 
-void (*OnBrowserFoundPeer)(const char *) = NULL;
-void (*OnBrowserLostPeer)(const char *) = NULL;
-void (*OnAdvertiserReceivedInvitation)(const char *) = NULL;
+// Browser callbacks
+void (*OnBrowserFoundHost)(int, const char *) = NULL;
+void (*OnBrowserLostHost)(int, const char *) = NULL;
+
+// Advertiser callbacks
+void (*OnAdvertiserReceivedConnectionRequest)(int, const char *) = NULL;
+
+// Shared callbacks
 void (*OnConnectingWithPeer)(const char *) = NULL;
 void (*OnConnectedWithPeer)(int, const char *) = NULL;
 void (*OnDisconnectedWithPeer)(int, const char *) = NULL;
 void (*OnReceivedData)(int, const void *, int) = NULL;
+
+typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 
 @interface MPCSession : NSObject
 
@@ -14,17 +21,28 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 
 @interface MPCSession () <MCSessionDelegate, MCNearbyServiceAdvertiserDelegate, MCNearbyServiceBrowserDelegate>
 
-@property (nonatomic, strong, nullable) MCSession *session;
+// Shared properties
+@property (nonatomic, strong, nullable) MCSession *mcSession;
 @property (nonatomic, strong, nonnull) NSString *serviceType;
 @property (nonatomic, strong, nullable) MCPeerID *peerID;
-@property (nonatomic, strong, nullable) MCNearbyServiceAdvertiser *advertiser;
-@property (nonatomic, strong, nullable) MCNearbyServiceBrowser *browser;
 @property (assign) int connectedPeerCount;
 @property (nonatomic, strong, nullable) NSMutableDictionary<MCPeerID *, NSNumber *> *peerIDToTransportID;
 @property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, MCPeerID *> *transportIDToPeerID;
 @property (assign) BOOL isHost;
 @property (nonatomic, strong, nullable) NSString *sessionId;
 @property (nonatomic, strong ,nullable) MCPeerID *hostPeerID;
+
+// Advertiser properties
+@property (nonatomic, strong, nullable) MCNearbyServiceAdvertiser *advertiser;
+@property (assign) bool autoApproveConnectionRequest;
+@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, ConnectionRequestHandler> *connectionRequestHandlerDict;
+@property (assign) int connectionRequestCount;
+
+// Browser properties
+@property (nonatomic, strong, nullable) MCNearbyServiceBrowser *browser;
+@property (assign) bool autoSendConnectionRequest;
+@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, MCPeerID *> *browsedhostDict;
+@property (assign) int browsedHostCount; // Use this count as the key for the dict
 
 @end
 
@@ -47,18 +65,25 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
     return _sharedObject;
 }
 
-- (void)initialize {
-    self.peerID = [[MCPeerID alloc] initWithDisplayName:[[UIDevice currentDevice] name]];
-    self.session = [[MCSession alloc] initWithPeer:self.peerID securityIdentity:nil encryptionPreference:MCEncryptionNone];
-    self.session.delegate = self;
+- (void)initializeWithNickname:(NSString *)nickname {
+    NSString *displayName = nickname == nil ? [[UIDevice currentDevice] name] : nickname;
+    self.peerID = [[MCPeerID alloc] initWithDisplayName:displayName];
+    self.mcSession = [[MCSession alloc] initWithPeer:self.peerID securityIdentity:nil encryptionPreference:MCEncryptionNone];
+    self.mcSession.delegate = self;
     self.connectedPeerCount = 0;
     self.peerIDToTransportID = [[NSMutableDictionary alloc] init];
     self.transportIDToPeerID = [[NSMutableDictionary alloc] init];
-    NSLog(@"[MPC] Initialized");
+    
+    NSLog(@"[MPCTransportNative] Initialized");
 }
 
-- (void)startAdvertising:(NSString *)sessionId {
+- (void)startAdvertising:(NSString *)sessionId autoApproveConnectionRequest:(bool)autoApproveConnectionRequest {
     self.sessionId = sessionId;
+    self.isHost = YES;
+    self.autoApproveConnectionRequest = autoApproveConnectionRequest;
+    self.connectionRequestHandlerDict = [[NSMutableDictionary alloc] init];
+    self.connectionRequestCount = 0;
+    
     if (sessionId != nil) {
         NSDictionary<NSString *, NSString *> *discoveryInfo = @{ @"SessionId" : sessionId };
         self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:discoveryInfo serviceType:self.serviceType];
@@ -66,25 +91,30 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
         self.advertiser = [[MCNearbyServiceAdvertiser alloc] initWithPeer:self.peerID discoveryInfo:nil serviceType:self.serviceType];
     }
     self.advertiser.delegate = self;
-    self.isHost = YES;
     [self.advertiser startAdvertisingPeer];
-    NSLog(@"[MPC] Started advertising");
+    
+    NSLog(@"[MPCTransportNative] Started advertising");
 }
 
-- (void)startBrowsing:(NSString *)sessionId {
+- (void)startBrowsing:(NSString *)sessionId autoSendConnectionRequest:(bool)autoSendConnectionRequest {
     self.sessionId = sessionId;
+    self.isHost = NO;
+    self.autoSendConnectionRequest = autoSendConnectionRequest;
+    self.browsedhostDict = [[NSMutableDictionary alloc] init];
+    self.browsedHostCount = 0;
+    
     self.browser = [[MCNearbyServiceBrowser alloc] initWithPeer:self.peerID serviceType:self.serviceType];
     self.browser.delegate = self;
-    self.isHost = NO;
     [self.browser startBrowsingForPeers];
-    NSLog(@"[MPC] Started browsing");
+    
+    NSLog(@"[MPCTransportNative] Started browsing");
 }
 
 - (void)stopAdvertising {
     if (self.advertiser != nil) {
         [self.advertiser stopAdvertisingPeer];
         self.advertiser = nil;
-        NSLog(@"[MPC] Stopped advertising");
+        NSLog(@"[MPCTransportNative] Stopped advertising");
     }
 }
 
@@ -92,7 +122,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
     if (self.browser != nil) {
         [self.browser stopBrowsingForPeers];
         self.browser = nil;
-        NSLog(@"[MPC] Stopped browsing");
+        NSLog(@"[MPCTransportNative] Stopped browsing");
     }
 }
 
@@ -103,21 +133,59 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
     if (self.browser != nil) {
         [self stopBrowsing];
     }
-    if (self.session != nil) {
-        [self.session disconnect];
+    if (self.mcSession != nil) {
+        [self.mcSession disconnect];
     }
-    self.session.delegate = nil;
-    self.session = nil;
+    self.mcSession.delegate = nil;
+    self.mcSession = nil;
     self.peerID = nil;
-    NSLog(@"[MPC] Shutdown");
+    NSLog(@"[MPCTransportNative] Shutdown");
 }
 
 - (void)sendData:(NSData *)data toPeer:(MCPeerID *)peerID withReliability:(BOOL)reliable {
     NSArray *peers = @[peerID];
-    BOOL success = [self.session sendData:data toPeers:peers withMode:reliable ? MCSessionSendDataReliable : MCSessionSendDataUnreliable error:nil];
+    BOOL success = [self.mcSession sendData:data toPeers:peers withMode:reliable ? MCSessionSendDataReliable : MCSessionSendDataUnreliable error:nil];
     if (!success) {
-        NSLog(@"[MPC] Failed to send data to peer %@", [peerID displayName]);
+        NSLog(@"[MPCTransportNative] Failed to send data to peer %@", [peerID displayName]);
     }
+}
+
+- (void)approveConnectionRequestWithConnectionRequestKey:(int)connectionRequestKey {
+    if (self.autoApproveConnectionRequest) {
+        NSLog(@"[MPCTransportNative] You cannot manually approve connection request under auto mode. Set AutoApproveConnectionRequest to false to allow manual control.");
+        return;
+    }
+    
+    ConnectionRequestHandler connectionRequestHandler = self.connectionRequestHandlerDict[[NSNumber numberWithInt:connectionRequestKey]];
+    if (connectionRequestHandler != nil) {
+        connectionRequestHandler(true, self.mcSession);
+    } else {
+        NSLog(@"[MPCTransportNative] There is no connection request in the dict with key %d", connectionRequestKey);
+    }
+}
+
+- (void)sendConnectionRequestWithBrowsedHostKey:(int)browsedHostKey {
+    if (self.autoSendConnectionRequest) {
+        NSLog(@"[MPCTransportNative] You cannot manually send connection request under auto mode. Set AutoSendConnectionRequest to false to allow manual control.");
+        return;
+    }
+    
+    MCPeerID *peerID = self.browsedhostDict[[NSNumber numberWithInt:browsedHostKey]];
+    if (peerID != nil) {
+        [self sendConnectionRequestWithPeerID:peerID];
+    } else {
+        NSLog(@"[MPCTransportNative] There is no browsed host in the dict with key %d", browsedHostKey);
+    }
+}
+
+- (void)sendConnectionRequestWithPeerID:(MCPeerID *)peerID {
+    if (self.browser == nil) {
+        NSLog(@"[MPCTransportNative] You need to have a browser to request connection.");
+        return;
+    }
+    
+    self.hostPeerID = peerID;
+    [self.browser invitePeer:peerID toSession:self.mcSession withContext:nil timeout:30];
 }
 
 #pragma mark - MCSessionDelegate
@@ -125,7 +193,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 - (void)session:(MCSession *)session peer:(MCPeerID *)peerID didChangeState:(MCSessionState)state {
     switch (state) {
         case MCSessionStateConnecting: {
-            NSLog(@"[MPC] Connecting with peer %@", [peerID displayName]);
+            NSLog(@"[MPCTransportNative] Connecting with peer %@", [peerID displayName]);
             if (OnConnectingWithPeer != NULL) {
                 dispatch_async(dispatch_get_main_queue(), ^{
                     OnConnectingWithPeer([[peerID displayName] UTF8String]);
@@ -134,7 +202,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
             break;
         }
         case MCSessionStateConnected: {
-            NSLog(@"[MPC] Connected with peer %@", [peerID displayName]);
+            NSLog(@"[MPCTransportNative] Connected with peer %@", [peerID displayName]);
             if ([self isHost]) {
                 // TODO: Handle reconnected clients
                 self.connectedPeerCount++;
@@ -160,8 +228,8 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
             break;
         }
         case MCSessionStateNotConnected: {
-            NSLog(@"[MPC] Disconnected with peer %@", [peerID displayName]);
-            if (self.session == nil) {
+            NSLog(@"[MPCTransportNative] Disconnected with peer %@", [peerID displayName]);
+            if (self.mcSession == nil) {
                 return;
             }
             if ([self isHost]) {
@@ -197,7 +265,7 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
             });
         }
     } else {
-        NSLog(@"[MPC] Received data from unknown peer %@", [peerID displayName]);
+        NSLog(@"[MPCTransportNative] Received data from unknown peer %@", [peerID displayName]);
     }
 }
 
@@ -216,91 +284,99 @@ void (*OnReceivedData)(int, const void *, int) = NULL;
 #pragma mark - MCNearbyServiceAdvertiserDelegate
 
 - (void)advertiser:(MCNearbyServiceAdvertiser *)advertiser didReceiveInvitationFromPeer:(MCPeerID *)peerID withContext:(NSData *)context invitationHandler:(void (^)(BOOL, MCSession * _Nullable))invitationHandler {
-    NSLog(@"[MPC] Advertiser did receive invitation from peer %@", [peerID displayName]);
-    if (OnAdvertiserReceivedInvitation != NULL) {
+    int connectionRequestKey = self.connectionRequestCount++;
+    [self.connectionRequestHandlerDict setObject:invitationHandler forKey:[NSNumber numberWithInt:connectionRequestKey]];
+    NSLog(@"[MPCTransportNative] Advertiser received connection request with peer %@", [peerID displayName]);
+    
+    if (OnAdvertiserReceivedConnectionRequest != NULL) {
         dispatch_async(dispatch_get_main_queue(), ^{
-            OnAdvertiserReceivedInvitation([[peerID displayName] UTF8String]);
+            OnAdvertiserReceivedConnectionRequest(connectionRequestKey, [[peerID displayName] UTF8String]);
         });
     }
-    invitationHandler(true, self.session);
+    
+    if (self.autoApproveConnectionRequest) {
+        invitationHandler(true, self.mcSession);
+    }
 }
 
 - (void)advertiser:(MCNearbyServiceAdvertiser *)advertiser didNotStartAdvertisingPeer:(NSError *)error {
-    NSLog(@"[MPC] Failed to start advertising peer");
+    NSLog(@"[MPCTransportNative] Failed to start advertising peer");
 }
 
 #pragma mark - MCNearbyServiceBrowserDelegate
 
 - (void)browser:(MCNearbyServiceBrowser *)browser foundPeer:(MCPeerID *)peerID withDiscoveryInfo:(NSDictionary<NSString *,NSString *> *)info {
     NSString *sessionId = info[@"SessionId"];
-    if (self.sessionId == nil && sessionId == nil) {
-        NSLog(@"[MPC] Browser found peer %@", [peerID displayName]);
-        if (OnBrowserFoundPeer != NULL) {
+    // If the session Id is compatible
+    if ((self.sessionId == nil && sessionId == nil) || (self.sessionId != nil && [sessionId isEqualToString:self.sessionId])) {
+        // Save the browsed peer to the dict
+        int browsedHostKey = self.browsedHostCount++;
+        [self.browsedhostDict setObject:peerID forKey:[NSNumber numberWithInt:browsedHostKey]];
+        NSLog(@"[MPCTransportNative] Browser found peer with name %@", [peerID displayName]);
+        
+        if (OnBrowserFoundHost != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                OnBrowserFoundPeer([[peerID displayName] UTF8String]);
+                OnBrowserFoundHost(browsedHostKey, [[peerID displayName] UTF8String]);
             });
         }
-        self.hostPeerID = peerID;
-        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
-        return;
-    }
-    
-    if ([sessionId isEqualToString:self.sessionId]) {
-        NSLog(@"[MPC] Browser found peer %@ with correct session Id: %@", [peerID displayName], sessionId);
-        if (OnBrowserFoundPeer != NULL) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                OnBrowserFoundPeer([[peerID displayName] UTF8String]);
-            });
+        
+        if (self.autoSendConnectionRequest) {
+            [self sendConnectionRequestWithPeerID:peerID];
         }
-        self.hostPeerID = peerID;
-        [browser invitePeer:peerID toSession:self.session withContext:nil timeout:30];
-    } else {
-        NSLog(@"[MPC] Browser found peer %@ with wrong session Id: %@, expecting session Id: %@", [peerID displayName], sessionId, self.sessionId);
     }
 }
 
 - (void)browser:(MCNearbyServiceBrowser *)browser lostPeer:(MCPeerID *)peerID {
-    NSLog(@"[MPC] Browser lost peer %@", [peerID displayName]);
-    if (OnBrowserLostPeer != NULL) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            OnBrowserLostPeer([[peerID displayName] UTF8String]);
-        });
+    NSLog(@"[MPCTransportNative] Browser lost peer with name %@", [peerID displayName]);
+    for (NSNumber *browsedHostKey in self.browsedhostDict) {
+        MCPeerID *savedPeerID = self.browsedhostDict[browsedHostKey];
+        if ([savedPeerID isEqual:peerID]) {
+            [self.browsedhostDict removeObjectForKey:browsedHostKey];
+            if (OnBrowserLostHost != NULL) {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    OnBrowserLostHost([browsedHostKey intValue], [[peerID displayName] UTF8String]);
+                });
+            }
+        }
     }
 }
 
 - (void)browser:(MCNearbyServiceBrowser *)browser didNotStartBrowsingForPeers:(NSError *)error {
-    NSLog(@"[MPC] Failed to start browsing for peers");
+    NSLog(@"[MPCTransportNative] Failed to start browsing for peers");
 }
 
 @end
 
 #pragma mark - Marshalling
 
-void MPC_Initialize(void (*OnBrowserFoundPeerDelegate)(const char *),
-                    void (*OnBrowserLostPeerDelegate)(const char *),
-                    void (*OnAdvertiserReceivedInvitationDelegate)(const char *),
+void MPC_Initialize(const char *nickname,
+                    void (*OnBrowserFoundPeerDelegate)(int, const char *),
+                    void (*OnBrowserLostPeerDelegate)(int, const char *),
+                    void (*OnAdvertiserReceivedConnectionRequestDelegate)(int, const char *),
                     void (*OnConnectingWithPeerDelegate)(const char *),
                     void (*OnConnectedWithPeerDelegate)(int, const char *),
                     void (*OnDisconnectedWithPeerDelegate)(int, const char *),
                     void (*OnReceivedDataDelegate)(int, const void *, int)) {
-    OnBrowserFoundPeer = OnBrowserFoundPeerDelegate;
-    OnBrowserLostPeer = OnBrowserLostPeerDelegate;
-    OnAdvertiserReceivedInvitation = OnAdvertiserReceivedInvitationDelegate;
+    OnBrowserFoundHost = OnBrowserFoundPeerDelegate;
+    OnBrowserLostHost = OnBrowserLostPeerDelegate;
+    OnAdvertiserReceivedConnectionRequest = OnAdvertiserReceivedConnectionRequestDelegate;
     OnConnectingWithPeer = OnConnectingWithPeerDelegate;
     OnConnectedWithPeer = OnConnectedWithPeerDelegate;
     OnDisconnectedWithPeer = OnDisconnectedWithPeerDelegate;
     OnReceivedData = OnReceivedDataDelegate;
-    [[MPCSession sharedInstance] initialize];
+    
+    NSString *str = nickname == NULL ? nil : [NSString stringWithUTF8String:nickname];
+    [[MPCSession sharedInstance] initializeWithNickname:str];
 }
 
-void MPC_StartAdvertising(const char *sessionId) {
+void MPC_StartAdvertising(const char *sessionId, bool autoApproveConnectionRequest) {
     NSString *str = sessionId == NULL ? nil : [NSString stringWithUTF8String:sessionId];
-    [[MPCSession sharedInstance] startAdvertising: str];
+    [[MPCSession sharedInstance] startAdvertising:str autoApproveConnectionRequest:autoApproveConnectionRequest];
 }
 
-void MPC_StartBrowsing(const char *sessionId) {
+void MPC_StartBrowsing(const char *sessionId, bool autoSendConnectionRequest) {
     NSString *str = sessionId == NULL ? nil : [NSString stringWithUTF8String:sessionId];
-    [[MPCSession sharedInstance] startBrowsing: str];
+    [[MPCSession sharedInstance] startBrowsing:str autoSendConnectionRequest:autoSendConnectionRequest];
 }
 
 void MPC_StopAdvertising(void) {
@@ -318,10 +394,18 @@ void MPC_Shutdown(void) {
 void MPC_SendData(int transportID, unsigned char *data, int length, bool reliable) {
     MPCSession *mpcSession = [MPCSession sharedInstance];
     MCPeerID *peerID = mpcSession.transportIDToPeerID[[[NSNumber alloc] initWithInt:transportID]];
-    if (peerID) {
+    if (peerID != nil) {
         NSData *arrData = [NSData dataWithBytes:data length:length];
         [mpcSession sendData:arrData toPeer:peerID withReliability:reliable];
     } else {
-        NSLog(@"[MPC] Failed to send data to peer with transport id %d", transportID);
+        NSLog(@"[MPCTransportNative] Failed to send data to peer with transport id %d", transportID);
     }
+}
+
+void MPC_SendConnectionRequest(int browsedHostKey) {
+    [[MPCSession sharedInstance] sendConnectionRequestWithBrowsedHostKey:browsedHostKey];
+}
+
+void MPC_ApproveConnectionRequest(int connectionRequestKey) {
+    [[MPCSession sharedInstance] approveConnectionRequestWithConnectionRequestKey:connectionRequestKey];
 }
