@@ -41,8 +41,8 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 // Browser properties
 @property (nonatomic, strong, nullable) MCNearbyServiceBrowser *browser;
 @property (assign) bool autoSendConnectionRequest;
-@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, MCPeerID *> *hostPeerDict;
-@property (assign) int hostPeerCount; // Use this count as the key for the dict
+@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, MCPeerID *> *nearbyHostDict;
+@property (assign) int nearbyHostCount; // Use this count as the key for the dict
 
 @end
 
@@ -100,8 +100,8 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     self.sessionId = sessionId;
     self.isHost = NO;
     self.autoSendConnectionRequest = autoSendConnectionRequest;
-    self.hostPeerDict = [[NSMutableDictionary alloc] init];
-    self.hostPeerCount = 0;
+    self.nearbyHostDict = [[NSMutableDictionary alloc] init];
+    self.nearbyHostCount = 0;
     
     self.browser = [[MCNearbyServiceBrowser alloc] initWithPeer:self.peerID serviceType:self.serviceType];
     self.browser.delegate = self;
@@ -164,17 +164,17 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     }
 }
 
-- (void)sendConnectionRequestWithHostPeerKey:(int)hostPeerKey {
+- (void)sendConnectionRequestWithNearbyHostKey:(int)nearbyHostKey {
     if (self.autoSendConnectionRequest) {
         NSLog(@"[MPCTransportNative] You cannot manually send connection request under auto mode. Set AutoSendConnectionRequest to false to allow manual control.");
         return;
     }
     
-    MCPeerID *peerID = self.hostPeerDict[[NSNumber numberWithInt:hostPeerKey]];
+    MCPeerID *peerID = self.nearbyHostDict[[NSNumber numberWithInt:nearbyHostKey]];
     if (peerID != nil) {
         [self sendConnectionRequestWithPeerID:peerID];
     } else {
-        NSLog(@"[MPCTransportNative] There is no host peer in the dict with key %d", hostPeerKey);
+        NSLog(@"[MPCTransportNative] There is no host peer in the dict with key %d", nearbyHostKey);
     }
 }
 
@@ -310,13 +310,13 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     // If the session Id is compatible
     if ((self.sessionId == nil && sessionId == nil) || (self.sessionId != nil && [sessionId isEqualToString:self.sessionId])) {
         // Save the browsed peer to the dict
-        int hostPeerKey = self.hostPeerCount++;
-        [self.hostPeerDict setObject:peerID forKey:[NSNumber numberWithInt:hostPeerKey]];
+        int nearbyHostKey = self.nearbyHostCount++;
+        [self.nearbyHostDict setObject:peerID forKey:[NSNumber numberWithInt:nearbyHostKey]];
         NSLog(@"[MPCTransportNative] Browser found peer with name %@", [peerID displayName]);
         
         if (OnBrowserFoundPeer != NULL) {
             dispatch_async(dispatch_get_main_queue(), ^{
-                OnBrowserFoundPeer(hostPeerKey, [[peerID displayName] UTF8String]);
+                OnBrowserFoundPeer(nearbyHostKey, [[peerID displayName] UTF8String]);
             });
         }
         
@@ -328,13 +328,13 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 
 - (void)browser:(MCNearbyServiceBrowser *)browser lostPeer:(MCPeerID *)peerID {
     NSLog(@"[MPCTransportNative] Browser lost peer with name %@", [peerID displayName]);
-    for (NSNumber *hostPeerKey in self.hostPeerDict) {
-        MCPeerID *savedPeerID = self.hostPeerDict[hostPeerKey];
+    for (NSNumber *nearbyHostKey in self.nearbyHostDict) {
+        MCPeerID *savedPeerID = self.nearbyHostDict[nearbyHostKey];
         if ([savedPeerID isEqual:peerID]) {
-            [self.hostPeerDict removeObjectForKey:hostPeerKey];
+            [self.nearbyHostDict removeObjectForKey:nearbyHostKey];
             if (OnBrowserLostPeer != NULL) {
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    OnBrowserLostPeer([hostPeerKey intValue], [[peerID displayName] UTF8String]);
+                    OnBrowserLostPeer([nearbyHostKey intValue], [[peerID displayName] UTF8String]);
                 });
             }
         }
@@ -402,8 +402,8 @@ void MPC_SendData(int transportID, unsigned char *data, int length, bool reliabl
     }
 }
 
-void MPC_SendConnectionRequest(int hostPeerKey) {
-    [[MPCSession sharedInstance] sendConnectionRequestWithHostPeerKey:hostPeerKey];
+void MPC_SendConnectionRequest(int nearbyHostKey) {
+    [[MPCSession sharedInstance] sendConnectionRequestWithNearbyHostKey:nearbyHostKey];
 }
 
 void MPC_ApproveConnectionRequest(int connectionRequestKey) {
