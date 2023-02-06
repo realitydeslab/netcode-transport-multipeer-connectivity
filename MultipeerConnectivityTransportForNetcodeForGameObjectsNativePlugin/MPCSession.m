@@ -6,6 +6,7 @@ void (*OnBrowserLostPeer)(int, const char *) = NULL;
 
 // Advertiser callbacks
 void (*OnAdvertiserReceivedConnectionRequest)(int, const char *) = NULL;
+void (*OnAdvertiserApprovedConnectionRequest)(int) = NULL;
 
 // Shared callbacks
 void (*OnConnectingWithPeer)(const char *) = NULL;
@@ -35,7 +36,7 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 // Advertiser properties
 @property (nonatomic, strong, nullable) MCNearbyServiceAdvertiser *advertiser;
 @property (assign) bool autoApproveConnectionRequest;
-@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, ConnectionRequestHandler> *connectionRequestHandlerDict;
+@property (nonatomic, strong, nullable) NSMutableDictionary<NSNumber *, ConnectionRequestHandler> *pendingConnectionRequestHandlerDict;
 @property (assign) int connectionRequestCount; // Use this count as the key for the dict
 
 // Browser properties
@@ -81,7 +82,7 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     self.sessionId = sessionId;
     self.isHost = YES;
     self.autoApproveConnectionRequest = autoApproveConnectionRequest;
-    self.connectionRequestHandlerDict = [[NSMutableDictionary alloc] init];
+    self.pendingConnectionRequestHandlerDict = [[NSMutableDictionary alloc] init];
     self.connectionRequestCount = 0;
     
     if (sessionId != nil) {
@@ -114,6 +115,8 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     if (self.advertiser != nil) {
         [self.advertiser stopAdvertisingPeer];
         self.advertiser = nil;
+        self.pendingConnectionRequestHandlerDict = nil;
+        self.connectionRequestCount = 0;
         NSLog(@"[MPCTransportNative] Stopped advertising");
     }
 }
@@ -122,6 +125,8 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     if (self.browser != nil) {
         [self.browser stopBrowsingForPeers];
         self.browser = nil;
+        self.nearbyHostDict = nil;
+        self.nearbyHostCount = 0;
         NSLog(@"[MPCTransportNative] Stopped browsing");
     }
 }
@@ -156,9 +161,21 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
         return;
     }
     
-    ConnectionRequestHandler connectionRequestHandler = self.connectionRequestHandlerDict[[NSNumber numberWithInt:connectionRequestKey]];
+    ConnectionRequestHandler connectionRequestHandler = self.pendingConnectionRequestHandlerDict[[NSNumber numberWithInt:connectionRequestKey]];
     if (connectionRequestHandler != nil) {
         connectionRequestHandler(true, self.mcSession);
+        NSLog(@"[MPCTransportNative] Advertiser approved connection request with key %d", connectionRequestKey);
+        // Remove the connection request from the dict
+        NSNumber *key = [NSNumber numberWithInt:connectionRequestKey];
+        if ([self.pendingConnectionRequestHandlerDict objectForKey:key]) {
+            [self.pendingConnectionRequestHandlerDict removeObjectForKey:key];
+        }
+        // Invoke the callback
+        if (OnAdvertiserApprovedConnectionRequest != NULL) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                OnAdvertiserApprovedConnectionRequest(connectionRequestKey);
+            });
+        }
     } else {
         NSLog(@"[MPCTransportNative] There is no connection request in the dict with key %d", connectionRequestKey);
     }
@@ -285,9 +302,10 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 
 - (void)advertiser:(MCNearbyServiceAdvertiser *)advertiser didReceiveInvitationFromPeer:(MCPeerID *)peerID withContext:(NSData *)context invitationHandler:(void (^)(BOOL, MCSession * _Nullable))invitationHandler {
     int connectionRequestKey = self.connectionRequestCount++;
-    [self.connectionRequestHandlerDict setObject:invitationHandler forKey:[NSNumber numberWithInt:connectionRequestKey]];
-    NSLog(@"[MPCTransportNative] Advertiser received connection request with peer %@", [peerID displayName]);
-    
+    NSLog(@"[MPCTransportNative] Advertiser received connection request with key %d from peer %@", connectionRequestKey, [peerID displayName]);
+    if (!self.autoApproveConnectionRequest) {
+        [self.pendingConnectionRequestHandlerDict setObject:invitationHandler forKey:[NSNumber numberWithInt:connectionRequestKey]];
+    }
     if (OnAdvertiserReceivedConnectionRequest != NULL) {
         dispatch_async(dispatch_get_main_queue(), ^{
             OnAdvertiserReceivedConnectionRequest(connectionRequestKey, [[peerID displayName] UTF8String]);
@@ -296,6 +314,12 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
     
     if (self.autoApproveConnectionRequest) {
         invitationHandler(true, self.mcSession);
+        NSLog(@"[MPCTransportNative] Advertiser approved connection request with key %d from peer %@", connectionRequestKey, [peerID displayName]);
+        if (OnAdvertiserApprovedConnectionRequest != NULL) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                OnAdvertiserApprovedConnectionRequest(connectionRequestKey);
+            });
+        }
     }
 }
 
@@ -350,20 +374,22 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 #pragma mark - Marshalling
 
 void MPC_Initialize(const char *nickname,
-                    void (*OnBrowserFoundPeerDelegate)(int, const char *),
-                    void (*OnBrowserLostPeerDelegate)(int, const char *),
-                    void (*OnAdvertiserReceivedConnectionRequestDelegate)(int, const char *),
-                    void (*OnConnectingWithPeerDelegate)(const char *),
-                    void (*OnConnectedWithPeerDelegate)(int, const char *),
-                    void (*OnDisconnectedWithPeerDelegate)(int, const char *),
-                    void (*OnReceivedDataDelegate)(int, const void *, int)) {
-    OnBrowserFoundPeer = OnBrowserFoundPeerDelegate;
-    OnBrowserLostPeer = OnBrowserLostPeerDelegate;
-    OnAdvertiserReceivedConnectionRequest = OnAdvertiserReceivedConnectionRequestDelegate;
-    OnConnectingWithPeer = OnConnectingWithPeerDelegate;
-    OnConnectedWithPeer = OnConnectedWithPeerDelegate;
-    OnDisconnectedWithPeer = OnDisconnectedWithPeerDelegate;
-    OnReceivedData = OnReceivedDataDelegate;
+                    void (*onBrowserFoundPeerDelegate)(int, const char *),
+                    void (*onBrowserLostPeerDelegate)(int, const char *),
+                    void (*onAdvertiserReceivedConnectionRequestDelegate)(int, const char *),
+                    void (*onAdvertiserApprovedConnectionRequestDelegate)(int),
+                    void (*onConnectingWithPeerDelegate)(const char *),
+                    void (*onConnectedWithPeerDelegate)(int, const char *),
+                    void (*onDisconnectedWithPeerDelegate)(int, const char *),
+                    void (*onReceivedDataDelegate)(int, const void *, int)) {
+    OnBrowserFoundPeer = onBrowserFoundPeerDelegate;
+    OnBrowserLostPeer = onBrowserLostPeerDelegate;
+    OnAdvertiserReceivedConnectionRequest = onAdvertiserReceivedConnectionRequestDelegate;
+    OnAdvertiserApprovedConnectionRequest = onAdvertiserApprovedConnectionRequestDelegate;
+    OnConnectingWithPeer = onConnectingWithPeerDelegate;
+    OnConnectedWithPeer = onConnectedWithPeerDelegate;
+    OnDisconnectedWithPeer = onDisconnectedWithPeerDelegate;
+    OnReceivedData = onReceivedDataDelegate;
     
     NSString *str = nickname == NULL ? nil : [NSString stringWithUTF8String:nickname];
     [[MPCSession sharedInstance] initializeWithNickname:str];
