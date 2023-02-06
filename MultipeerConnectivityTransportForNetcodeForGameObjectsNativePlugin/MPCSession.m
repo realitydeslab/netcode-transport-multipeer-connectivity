@@ -132,12 +132,9 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 }
 
 - (void)shutdown {
-    if (self.advertiser != nil) {
-        [self stopAdvertising];
-    }
-    if (self.browser != nil) {
-        [self stopBrowsing];
-    }
+    [self stopAdvertising];
+    [self stopBrowsing];
+    
     if (self.mcSession != nil) {
         [self.mcSession disconnect];
     }
@@ -351,6 +348,10 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 }
 
 - (void)browser:(MCNearbyServiceBrowser *)browser lostPeer:(MCPeerID *)peerID {
+    if (peerID == nil) {
+        return;
+    }
+    
     NSLog(@"[MPCTransportNative] Browser lost peer with name %@", [peerID displayName]);
     for (NSNumber *nearbyHostKey in self.nearbyHostDict) {
         MCPeerID *savedPeerID = self.nearbyHostDict[nearbyHostKey];
