@@ -1,0 +1,6 @@
+*.bundle
+*.o
+*.a
+*.so
+*.dylib
+*.frameworks

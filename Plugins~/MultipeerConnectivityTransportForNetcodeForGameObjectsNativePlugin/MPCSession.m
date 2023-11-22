@@ -67,7 +67,21 @@ typedef void (^ConnectionRequestHandler)(BOOL, MCSession * _Nullable);
 }
 
 - (void)initializeWithNickname:(NSString *)nickname {
-    NSString *displayName = nickname == nil ? [[UIDevice currentDevice] name] : nickname;
+#if TARGET_OS_IPHONE
+    NSString *displayName = (nickname == nil || [nickname length] == 0) ? [[UIDevice currentDevice] name] : nickname;
+#else
+    NSString *displayName = (nickname == nil || [nickname length] == 0) ? [[NSProcessInfo processInfo] hostName] : nickname;
+#endif
+
+    if ([displayName length] > 63) {
+        displayName = [displayName substringToIndex:63];
+    }
+
+    NSLog(@"initializeWithNickname %@", displayName);
+    if ([displayName length] == 0) {
+        NSLog(@"[MPCTransportNative] Failed to initialize with nickname %@", nickname);
+        return;
+    }
     self.peerID = [[MCPeerID alloc] initWithDisplayName:displayName];
     self.mcSession = [[MCSession alloc] initWithPeer:self.peerID securityIdentity:nil encryptionPreference:MCEncryptionNone];
     self.mcSession.delegate = self;
