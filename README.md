@@ -4,7 +4,7 @@
 
 This package implemented the transport layer of Netcode for GameObjects with Apple Multipeer Connectivity, which can enable peer-to-peer communication between nearby devices. By using Multipeer Connectivity, nearby devices can connect to each other when there is no WiFi or cellular network. Multipeer Connectivity is the technology behind AirDrop, which means it can transfer large file between devices very fast. Please reference Apple's official document for detailed information: https://developer.apple.com/documentation/multipeerconnectivity.
 
-We created a [sample project](https://github.com/holoi/UnityNetcodeMPCTransportSample) demonstrating how to properly setup the network connection.
+We created a [sample project](https://github.com/holoi/netcode-transport-multipeerconnectivity-sample) demonstrating how to properly setup the network connection.
 
 ## Some Good to Know Concepts Before Using The Transport
 
