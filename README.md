@@ -106,3 +106,13 @@ When you build the project onto your iOS devices for the first time, both host a
 ## Debug Your Project in Unity Editor
 
 Please notice that Multipeer Connectivity Transport can only run on an iOS device. It cannot run on your Mac. Therefore, when you want to debug your project in Unity Editor, we recommand you temporarily switch to use Unity Transport.
+
+
+## How to compile native plugins 
+
+Run
+```
+cd Plugins~/script
+./build.sh
+```
+
