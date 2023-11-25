@@ -6,6 +6,18 @@ This package implemented the transport layer of Netcode for GameObjects with App
 
 We created a [sample project](https://github.com/holoi/netcode-transport-multipeer-connectivity-sample) demonstrating how to properly setup the network connection.
 
+## How To Install
+This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
+
+* Name: `Holo Interactive`
+* URL: `https://registry.npmjs.com`
+* Scope: `com.holoi`
+
+Now you can Install a package from a registry by name:
+
+```com.holoi.netcode.transport.multipeer-connectivity```
+
+
 ## Some Good to Know Concepts Before Using The Transport
 
 ### Host-Client Architecture vs Peer-To-Peer Architecture
