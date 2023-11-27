@@ -8,8 +8,8 @@ CFLAGS="-O3 -Wall "
 CC=gcc
 AR=ar
 
-INCLUDES="-I../MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin"
-SOURCES="../MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin"
+INCLUDES="-IMultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin"
+SOURCES="MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin"
 LIBNAME=MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin
 LIBS="-framework MultipeerConnectivity -framework Foundation"
 
@@ -37,7 +37,7 @@ $CC $MAC_ARGS -fPIC -rdynamic -shared -o lib${LIBNAME}_x86_64.dylib $LIBS MPCSes
 
 lipo -create -output ${LIBNAME}.bundle lib${LIBNAME}_arm64.dylib lib${LIBNAME}_x86_64.dylib
 
-DST="../../Runtime/macOS"
+DST="../Runtime/Plugins/macOS"
 mkdir -p $DST
 rm -rf $DST/${LIBNAME}.bundle
 cp -r ${LIBNAME}.bundle $DST
@@ -51,7 +51,7 @@ $CC $CFLAGS $INCLUDES $IOS_ARGS -c $SOURCES/MPCSession.m $LIBS -o MPCSession.o
 
 $AR -crv lib${LIBNAME}.a MPCSession.o
 
-DST="../../Runtime/iOS"
+DST="../Runtime/Plugins/iOS"
 mkdir -p $DST
 rm -rf $DST/lib${LIBNAME}.a
 cp -r lib${LIBNAME}.a $DST
