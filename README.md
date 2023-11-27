@@ -6,6 +6,8 @@ This package implemented the transport layer of Netcode for GameObjects with App
 
 We created a [sample project](https://github.com/holoi/netcode-transport-multipeer-connectivity-sample) demonstrating how to properly setup the network connection.
 
+We contribute this package to Unity Multiplayer Community repo. See https://github.com/Unity-Technologies/multiplayer-community-contributions/tree/main/Transports/com.community.netcode.transport.multipeer-connectivity
+
 ## How To Install
 This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
 
