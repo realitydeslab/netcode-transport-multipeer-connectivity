@@ -125,7 +125,7 @@ Please notice that Multipeer Connectivity Transport can only run on an iOS devic
 
 Run
 ```
-cd Plugins~/script
+cd Source~
 ./build.sh
 ```
 
