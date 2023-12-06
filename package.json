@@ -8,5 +8,11 @@
   "dependencies": {
     "com.unity.netcode.gameobjects": "1.7.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "_upm": {
+    "supportedPlatforms": [
+      "iOS",
+      "Mac"
+    ]
+  }
 }
