@@ -5,6 +5,8 @@
 using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
+
+#if UNITY_IOS && UNITY_EDITOR
 using UnityEditor.iOS.Xcode;
 
 namespace Netcode.Transports.MultipeerConnectivity.Editor
@@ -45,3 +47,4 @@ namespace Netcode.Transports.MultipeerConnectivity.Editor
         }
     }
 }
+#endif
