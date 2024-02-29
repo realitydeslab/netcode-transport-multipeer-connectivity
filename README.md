@@ -11,13 +11,13 @@ We contribute this package to Unity Multiplayer Community repo. See https://gith
 ## How To Install
 This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
 
-* Name: `Holo Interactive`
+* Name: `Reality Design Lab`
 * URL: `https://registry.npmjs.com`
-* Scope: `com.holoi`
+* Scope: `org.realitydeslab`
 
 Now you can Install a package from a registry by name:
 
-```com.holoi.netcode.transport.multipeer-connectivity```
+```org.realitydeslab.netcode.transport.multipeer-connectivity```
 
 ## Some Good to Know Concepts Before Using The Transport
 
