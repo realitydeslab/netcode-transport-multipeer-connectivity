@@ -1,6 +1,6 @@
 #!/bin/sh
 
-# SPDX-FileCopyrightText: Copyright 2023 Holo Interactive <dev@holoi.com>
+# SPDX-FileCopyrightText: Copyright 2023 Reality Design Lab <dev@reality.design>
 # SPDX-FileContributor: Botao Hu <botao@holoi.com>
 # SPDX-License-Identifier: MIT
 
