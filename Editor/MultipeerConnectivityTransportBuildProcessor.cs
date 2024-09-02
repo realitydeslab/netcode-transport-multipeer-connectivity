@@ -1,12 +1,13 @@
-// SPDX-FileCopyrightText: Copyright 2023 Reality Design Lab <dev@reality.design>
+// SPDX-FileCopyrightText: Copyright 2024 Reality Design Lab <dev@reality.design>
 // SPDX-FileContributor: Yuchen Zhang <yuchenz27@outlook.com>
+// SPDX-FileContributor: Botao Amber Hu <botao@reality.design>
 // SPDX-License-Identifier: MIT
 
 using System.IO;
 using UnityEditor;
 using UnityEditor.Callbacks;
 
-#if UNITY_IOS && UNITY_EDITOR
+#if (UNITY_IOS || UNITY_VISIONOS) && UNITY_EDITOR
 using UnityEditor.iOS.Xcode;
 
 namespace Netcode.Transports.MultipeerConnectivity.Editor

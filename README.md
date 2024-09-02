@@ -2,13 +2,25 @@
 
 ## Overview
 
-This package implemented the transport layer of Netcode for GameObjects with Apple Multipeer Connectivity, which can enable peer-to-peer communication between nearby devices. By using Multipeer Connectivity, nearby devices can connect to each other when there is no WiFi or cellular network. Multipeer Connectivity is the technology behind AirDrop, which means it can transfer large file between devices very fast. Please reference Apple's official document for detailed information: https://developer.apple.com/documentation/multipeerconnectivity.
+This package implements the Transport layer of Netcode for GameObjects using Apple Multipeer Connectivity, enabling peer-to-peer communication between nearby Apple devices (macOS, visionOS, iOS). Multipeer Connectivity facilitates real-time communication and data exchange, supporting activities like multiplayer gaming, collaborative work, and data sharing, even without WiFi or cellular networks. It powers technologies like AirDrop, allowing fast large file transfers. For more details, refer to Apple's official documentation of [Multipeer Connectivity](https://developer.apple.com/documentation/multipeerconnectivity).
 
-We created a [sample project](https://github.com/holoi/netcode-transport-multipeer-connectivity-sample) demonstrating how to properly setup the network connection.
+The Multipeer Connectivity Transport for Netcode for GameObjects extends this capability to Unity-based projects, enabling developers to integrate cross-platform networking features into their games and applications. This allows peer-to-peer local network communication between iOS, visionOS, macOS devices, and within the Unity Editor on Mac. For a demonstration on how to use this transport, please check out our [sample project](https://github.com/realitydeslab/netcode-transport-multipeer-connectivity-sample).
 
-We contribute this package to Unity Multiplayer Community repo. See https://github.com/Unity-Technologies/multiplayer-community-contributions/tree/main/Transports/com.community.netcode.transport.multipeer-connectivity
+We also contribute this early version of this package to Unity Multiplayer Community repo. 
+See https://github.com/Unity-Technologies/multiplayer-community-contributions/tree/main/Transports/com.community.netcode.transport.multipeer-connectivity
+
+## System Requirements
+
+This package has been tested and verified for peer-to-peer communication using MultipeerConnectivity across the following platforms:
+- iOS 17.0+
+- visionOS 1.0+
+- macOS 14.0+
+- Unity Editor 2022.3 LTS (macOS)
+
+Note: The later versions may work but are not tested.
 
 ## How To Install
+
 This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
 
 * Name: `Reality Design Lab`
@@ -19,7 +31,7 @@ Now you can Install a package from a registry by name:
 
 ```org.realitydeslab.netcode.transport.multipeer-connectivity```
 
-## Some Good to Know Concepts Before Using The Transport
+## Concepts Before Using The Transport
 
 ### Host-Client Architecture vs Peer-To-Peer Architecture
 
@@ -118,14 +130,25 @@ When you build the project onto your iOS devices for the first time, both host a
 
 ## Debug Your Project in Unity Editor
 
-Please notice that Multipeer Connectivity Transport can only run on an iOS device. It cannot run on your Mac. Therefore, when you want to debug your project in Unity Editor, we recommand you temporarily switch to use Unity Transport.
+Please notice that Multipeer Connectivity Transport can run on an iOS, visionOS, macOS device. It cannot run on your Mac. Therefore, when you want to debug your project in Unity Editor, we recommand you temporarily switch to use Unity Transport.
 
 
 ## How to compile native plugins 
 
-Run
-```
-cd Source~
-./build.sh
-```
+To build the native plugins for this transport from source code, follow these steps:
 
+1. Ensure you have Xcode and the necessary iOS development tools installed on your Mac.
+1. Open a terminal and navigate to the root directory of this project.
+1. Run the following commands:
+    ```
+    cd Source~
+    ./build.sh
+    ```
+    This script will compile the native iOS, macOS, visionOS plugin and place the resulting `.a` files in the appropriate directories within the Unity project structure.
+1. After running the build script, the updated plugin files should be ready for use in your Unity project.
+
+Note: You'll need to rebuild the plugin if you make any changes to the native code or want to target a different iOS architecture.
+
+## Author and License 
+
+This project is authored by [Reality Design Lab](https://reality.design) and is licensed under the [MIT License](https://opensource.org/license/mit).

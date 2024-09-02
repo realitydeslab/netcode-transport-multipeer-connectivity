@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: Copyright 2023 Reality Design Lab <dev@reality.design>
+// SPDX-FileCopyrightText: Copyright 2024 Reality Design Lab <dev@reality.design>
 // SPDX-FileContributor: Yuchen Zhang <yuchenz27@outlook.com>
+// SPDX-FileContributor: Botao Amber Hu <botao@reality.design>
 // SPDX-License-Identifier: MIT
 
 using System;
@@ -12,6 +13,12 @@ namespace Netcode.Transports.MultipeerConnectivity
 {
     public class MultipeerConnectivityTransport : NetworkTransport
     {
+        #if (UNITY_IOS || UNITY_VISIONOS) && !UNITY_EDITOR
+            public const string IMPORT_LIBRARY = "__Internal";
+        #else
+            public const string IMPORT_LIBRARY = "MultipeerConnectivityTransportForNetcodeForGameObjectsNativePlugin";
+        #endif
+
         /// <summary>
         /// This class is a singleton so it's easy to be referenced anywhere.
         /// </summary>
@@ -80,11 +87,6 @@ namespace Netcode.Transports.MultipeerConnectivity
         private readonly Dictionary<int, string> _pendingConnectionRequestDict = new();
 
         /// <summary>
-        /// Check if we are currently running on an iOS device.
-        /// </summary>
-        public static bool IsRuntime => Application.platform == RuntimePlatform.IPhonePlayer;
-
-        /// <summary>
         /// Initialize the MPCSession and register native callbacks.
         /// </summary>
         /// <param name="nickname">The name of the device displayed in the network</param>
@@ -96,7 +98,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// <param name="onConnectedWithPeer">Invoked when connected with a peer</param>
         /// <param name="onDisconnectedWithPeer">Invoked when disconnected with a peer</param>
         /// <param name="onReceivedData">Invoked when receives data message from a peer</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_Initialize(string nickname,
                                                   Action<int, string> onBrowserFoundPeer,
                                                   Action<int, string> onBrowserLostPeer,
@@ -112,7 +114,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         /// <param name="sessionId">The unique id of the network session</param>
         /// <param name="autoApproveConnectionRequest">Setting to true to approve all incoming connection requests</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_StartAdvertising(string sessionId, bool autoApproveConnectionRequest);
 
         /// <summary>
@@ -120,25 +122,25 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         /// <param name="sessionId">The unique id of the network session</param>
         /// <param name="autoSendConnectionRequest">Setting to true to automatically send connection request to the first browsed peer</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_StartBrowsing(string sessionId, bool autoSendConnectionRequest);
 
         /// <summary>
         /// Stop advertising.
         /// </summary>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_StopAdvertising();
 
         /// <summary>
         /// Stop browsing.
         /// </summary>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_StopBrowsing();
 
         /// <summary>
         /// Shutdown and deinitialize the MPCSession.
         /// </summary>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_Shutdown();
 
         /// <summary>
@@ -148,21 +150,21 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// <param name="data">The raw data</param>
         /// <param name="length">The length of the data</param>
         /// <param name="reliable">Whether to use realiable way to send the data</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_SendData(int transportID, byte[] data, int length, bool reliable);
 
         /// <summary>
         /// Send connection request to a specific browsed host.
         /// </summary>
         /// <param name="nearbyHostKey">The key of the host in the dict</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_SendConnectionRequest(int nearbyHostKey);
 
         /// <summary>
         /// Approve the connection request sent by a specific client.
         /// </summary>
         /// <param name="connectionRequestKey">The key of the connection request in the dict</param>
-        [DllImport("__Internal")]
+        [DllImport(IMPORT_LIBRARY)]
         private static extern void MPC_ApproveConnectionRequest(int connectionRequestKey);
 
         /// <summary>
@@ -409,15 +411,12 @@ namespace Netcode.Transports.MultipeerConnectivity
 
         public override void Shutdown()
         {
-            if (IsRuntime)
-            {
-                MPC_Shutdown();
-                // Reset variables
-                _pendingConnectionRequestDict.Clear();
-                _nearbyHostDict.Clear();
-                _isAdvertising = false;
-                _isBrowsing = false;
-            }
+            MPC_Shutdown();
+            // Reset variables
+            _pendingConnectionRequestDict.Clear();
+            _nearbyHostDict.Clear();
+            _isAdvertising = false;
+            _isBrowsing = false;
         }
 
         /// <summary>
@@ -425,9 +424,10 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public void StartAdvertising()
         {
-            if (IsRuntime && !_isAdvertising)
+            if (!_isAdvertising)
             {
                 _pendingConnectionRequestDict.Clear();
+                Debug.Log("Start advertising");
                 MPC_StartAdvertising(SessionId, AutoApproveConnectionRequest);
                 _isAdvertising = true;
             }
@@ -438,7 +438,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public void StopAdvertising()
         {
-            if (IsRuntime && _isAdvertising)
+            if (_isAdvertising)
             {
                 MPC_StopAdvertising();
                 _isAdvertising = false;
@@ -451,7 +451,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public void StartBrowsing()
         {
-            if (IsRuntime && !_isBrowsing)
+            if (!_isBrowsing)
             {
                 _nearbyHostDict.Clear();
                 MPC_StartBrowsing(SessionId, AutoSendConnectionRequest);
@@ -464,7 +464,7 @@ namespace Netcode.Transports.MultipeerConnectivity
         /// </summary>
         public void StopBrowsing()
         {
-            if (IsRuntime && _isBrowsing)
+            if (_isBrowsing)
             {
                 MPC_StopBrowsing();
                 _isBrowsing = false;
@@ -474,18 +474,12 @@ namespace Netcode.Transports.MultipeerConnectivity
 
         public void SendConnectionRequest(int nearbyHostKey)
         {
-            if (IsRuntime)
-            {
-                MPC_SendConnectionRequest(nearbyHostKey);
-            }
+            MPC_SendConnectionRequest(nearbyHostKey);
         }
 
         public void ApproveConnectionRequest(int connectionRequestKey)
         {
-            if (IsRuntime)
-            {
-                MPC_ApproveConnectionRequest(connectionRequestKey);
-            }
+            MPC_ApproveConnectionRequest(connectionRequestKey);
         }
     }
 }

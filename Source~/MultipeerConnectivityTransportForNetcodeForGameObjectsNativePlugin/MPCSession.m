@@ -1,5 +1,6 @@
-// SPDX-FileCopyrightText: Copyright 2023 Reality Design Lab <dev@reality.design>
+// SPDX-FileCopyrightText: Copyright 2024 Reality Design Lab <dev@reality.design>
 // SPDX-FileContributor: Yuchen Zhang <yuchenz27@outlook.com>
+// SPDX-FileContributor: Botao Amber Hu <botao@reality.design>
 // SPDX-License-Identifier: MIT
 
 #import <MultipeerConnectivity/MultipeerConnectivity.h>
