@@ -23,8 +23,8 @@ Note: The later versions may work but are not tested.
 
 This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
 
-* Name: `Reality Design Lab`
-* URL: `https://registry.npmjs.com`
+* Name: `package.openupm.com`
+* URL: `https://package.openupm.com`
 * Scope: `org.realitydeslab`
 
 Now you can Install a package from a registry by name:
