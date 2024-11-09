@@ -23,7 +23,7 @@ Note: The later versions may work but are not tested.
 
 This package uses the scoped registry feature to resolve package dependencies. Open the Package Manager page in the Project Settings window and add the following entry to the Scoped Registries list:
 
-* Name: `package.openupm.com`
+* Name: `openupm`
 * URL: `https://package.openupm.com`
 * Scope: `org.realitydeslab`
 
